@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO & SEARCH ENGINE OPTIMIZATION -->
+  <title>Image Pro Batch Enhancer - Document Digitization & Photo Editor</title>
+  <meta name="description" content="A professional, free browser-based engine for high-performance document digitization, batch image enhancement, perspective deskew, and bulk resizing. Processes 100% locally for absolute privacy.">
+  <meta name="keywords" content="batch image editor, document digitization, photo enhancer, perspective crop, bulk image resize, local processing, WEBP converter, Ibn al-Arabi Foundation">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://ibnularabifoundation.org/imageproenhancer/">
+  
+  <!-- OPEN GRAPH / SOCIAL MEDIA -->
+  <meta property="og:title" content="Image Pro Batch Enhancer">
+  <meta property="og:description" content="Secure, browser-local batch image processing and document digitization tool.">
+  <meta property="og:url" content="https://ibnularabifoundation.org/imageproenhancer/">
+  <meta property="og:type" content="website">
+
+  <!-- GOOGLE ADSENSE BASE SCRIPT -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4628684998084123" crossorigin="anonymous"></script>
+
+  <!-- STRUCTURED DATA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Image Pro Batch Enhancer",
+    "url": "https://ibnularabifoundation.org/imageproenhancer/",
+    "description": "Professional browser-based image batch processing, white balance correction, and document digitization tool.",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- Load JSZip from public CDN for web deployment -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    /* NEW UI THEME: PDF Nudge Shifter Aesthetic */
+    :root {
+      --bg-app: #eaedf2;          
+      --bg-header: #c1dcb3;       
+      --bg-card: #ffffff;         
+      --border-color: #d6d9df;     
+      --text-main: #000000;        
+      --text-muted: #555555;       
+      
+      /* Button Theme Colors */
+      --btn-green: #a9d3a4;          
+      --btn-blue: #bedefe;   
+      --btn-red: #ffcaca;
+      --btn-gray: #f9f9f9;
+      --radius: 6px;               
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; height: 100vh; background: var(--bg-app); color: var(--text-main); overflow: hidden; font-size: 13px; }
+
+    /* LEFT: INFO PANEL */
+    #side-panel { width: 300px; flex-shrink: 0; background: var(--bg-app); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; z-index: 10; padding: 16px; overflow-y: auto; }
+    .app-intro { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: center; background: var(--bg-card); border-radius: var(--radius); margin-bottom: 16px; border: 1px solid var(--border-color); }
+    .app-intro h2 { font-size: 16px; color: var(--text-main); margin-bottom: 12px; font-weight: 700; line-height: 1.3; margin-top: 0; }
+    .app-intro p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+    .app-intro a.privacy-link { font-size: 11px; color: #2563eb; text-decoration: none; font-weight: 600; display: inline-block; }
+    .app-intro a.privacy-link:hover { text-decoration: underline; }
+    
+    .sponsor-slot { flex: 1; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border-color); overflow: hidden; position: relative; }
+    .adblock-msg { position: absolute; text-align: center; color: #9ca3af; font-size: 12px; padding: 20px; font-weight: 600; line-height: 1.5; z-index: 0; }
+
+    /* MIDDLE: WORKSPACE */
+    #workspace { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; background: var(--bg-app); min-width: 0; }
+    
+    #top-bar { height: 50px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: var(--bg-header); }
+    
+    .title-wrap { display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0; letter-spacing: 0px; }
+    #helpBtn { background: #ffffff; border: 1px solid #888888; color: var(--text-main); border-radius: 50%; width: 22px; height: 22px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; outline: none; }
+    #helpBtn:hover { background: #f0f0f0; }
+
+    #zoom-controls { display: flex; align-items: center; gap: 16px; }
+    #zoom-controls button { background: none; border: none; color: var(--text-main); cursor: pointer; font-size: 16px; font-weight: bold; transition: opacity 0.2s; }
+    #zoom-controls button:hover { opacity: 0.7; }
+    #zoomReadout { font-size: 12px; font-weight: 600; min-width: 45px; text-align: center; color: var(--text-main); user-select: none; font-variant-numeric: tabular-nums; }
+
+    #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 30px; overflow: hidden; cursor: grab; background-image: radial-gradient(#d6d9df 1px, transparent 1px); background-size: 24px 24px; }
+    canvas { max-width: 100%; max-height: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.1); background: #fff; transform-origin: center center; border: 1px solid var(--border-color); }
+
+    #thumbnail-strip { height: 100px; background: var(--bg-app); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 12px 24px; gap: 12px; box-shadow: inset 0 4px 6px -1px rgba(0,0,0,0.02); z-index: 5; }
+    #thumbnail-strip::-webkit-scrollbar { height: 6px; }
+    #thumbnail-strip::-webkit-scrollbar-thumb { background: #bdc1c6; border-radius: 3px; }
+    
+    .thumb-box { position: relative; height: 100%; aspect-ratio: 1; border: 2px solid transparent; border-radius: var(--radius); overflow: hidden; cursor: pointer; flex-shrink: 0; background: var(--bg-card); transition: all 0.2s; opacity: 0.6; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .thumb-box:hover { opacity: 0.9; }
+    .thumb-box.active { border-color: var(--btn-green); opacity: 1; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .thumb-remove { position: absolute; top: 4px; right: 4px; background: rgba(255, 255, 255, 0.9); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer; opacity: 0; transition: all 0.2s; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .thumb-remove:hover { background: var(--btn-red); color: black; border-color: #e5b5b5; }
+    .thumb-box:hover .thumb-remove { opacity: 1; }
+
+    /* RIGHT: TOOL SIDEBAR */
+    #sidebar { width: 360px; flex-shrink: 0; background: var(--bg-app); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; z-index: 10; }
+    
+    /* STICKY IMPORT TOP SECTION */
+    #sticky-import { padding: 16px; background: var(--bg-app); border-bottom: 1px solid var(--border-color); z-index: 11; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+    #sticky-import .card { margin-bottom: 0; }
+    
+    .scrollable-content { flex: 1; overflow-y: auto; padding: 16px; }
+    .scrollable-content::-webkit-scrollbar { width: 6px; }
+    .scrollable-content::-webkit-scrollbar-thumb { background: #bdc1c6; border-radius: 3px; }
+    
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .card h3 { font-size: 14px; font-weight: bold; color: var(--text-main); margin: 0 0 14px 0; }
+    
+    .btn { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--btn-gray); color: var(--text-main); font-weight: normal; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: filter 0.2s, box-shadow 0.2s; }
+    .btn:hover { filter: brightness(0.95); }
+    
+    .import-btn { background: #fdfdfd; border: 1px solid #ced4da; border-radius: 4px; padding: 10px 12px; color: #000; font-size: 14px; }
+    .import-btn:hover { background: #f1f3f5; }
+    
+    .btn.active-btn { background: var(--btn-green); border-color: #93ba8f; font-weight: bold; }
+    .btn.blue-btn { background: var(--btn-blue); border-color: #a3c4e4; font-weight: bold; }
+    .btn.danger-btn { background: var(--btn-red); border-color: #e5b5b5; font-weight: bold; }
+    .btn.drag-over { background: var(--btn-blue) !important; border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37,99,235,0.2) !important; }
+
+    .control-group { margin-bottom: 12px; }
+    .label-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: var(--text-main); }
+    
+    input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; accent-color: #777; cursor: pointer; background: #e0e0e0; border-radius: 3px; border: 1px solid #ccc; }
+    input[type="range"]::-webkit-slider-thumb { width: 16px; height: 16px; -webkit-appearance: none; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); border: 1px solid #aaa; }
+    input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); border: 1px solid #aaa; }
+    
+    .toggle-group { display: flex; gap: 4px; margin-bottom: 12px; }
+    .toggle-group label { flex: 1; padding: 6px; text-align: center; border-radius: 4px; cursor: pointer; border: 1px solid var(--border-color); background: var(--btn-gray); font-size: 13px; color: var(--text-main); transition: filter 0.2s; }
+    .toggle-group input { display: none; }
+    .toggle-group input:checked + label { background: var(--btn-green); border-color: #93ba8f; font-weight: bold; }
+    
+    .resize-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: var(--text-main); transition: opacity 0.2s; }
+    .resize-row > span { width: 45px; }
+    .resize-input-group { display: flex; align-items: center; background: #ffffff; border: 1px solid #ccc; border-radius: 4px; padding: 4px 6px; width: 90px; }
+    .resize-input-group input { border: none; outline: none; background: transparent; color: var(--text-main); width: 100%; font-size: 13px; text-align: right; padding-right: 4px; font-variant-numeric: tabular-nums; }
+    .resize-input-group input:disabled { color: #888; }
+    .resize-row .check-label { display: flex; align-items: center; gap: 6px; cursor: pointer; width: 85px; font-size: 13px; }
+    .check-label input[type="checkbox"] { accent-color: #777; cursor: pointer; }
+
+    .batch-strip { padding: 16px; background: var(--bg-app); border-top: 1px solid var(--border-color); }
+    .batch-count { font-size: 12px; margin-bottom: 10px; color: var(--text-main); text-align: center; }
+    
+    #notification { position: absolute; top: 60px; right: 380px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: bold; display: none; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: var(--bg-card); width: 600px; max-width: 90%; max-height: 85vh; border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; border: 1px solid var(--border-color); }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-header); }
+    .modal-header h2 { font-size: 16px; font-weight: bold; color: var(--text-main); margin: 0; }
+    .close-btn { background: #ffffff; border: 1px solid #888; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; color: var(--text-main); transition: background 0.2s; outline: none; }
+    .close-btn:hover { background: var(--btn-red); border-color: #e5b5b5; }
+    .modal-body { padding: 24px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--text-main); }
+    .modal-body h3 { font-size: 14px; color: var(--text-main); margin: 20px 0 10px; font-weight: bold; }
+    .modal-body h3:first-child { margin-top: 0; }
+    .modal-body ul { padding-left: 20px; margin-bottom: 16px; }
+    .modal-body li { margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT: INFO PANEL -->
+  <aside id="side-panel" aria-label="Advertisements and Information">
+    <div class="app-intro">
+      <h2>Image Pro Batch Enhancer</h2>
+      <p>A professional browser-based engine designed for high-performance document digitization, advanced perspective correction, and automated batch image processing. All files are processed locally on your device for maximum speed and absolute privacy.</p>
+      <a href="/" class="privacy-link">Privacy Policy &amp; Terms</a>
+    </div>
+    
+    <div class="sponsor-slot">
+      <div class="adblock-msg">Please consider disabling your ad blocker to support this free tool.</div>
+      <ins class="adsbygoogle"
+           style="display:block; width: 100%; height: 100%; z-index: 1; position: relative;"
+           data-ad-client="ca-pub-4628684998084123"
+           data-ad-slot="3012037994"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+           (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+  </aside>
+
+  <!-- MIDDLE: MAIN WORKSPACE -->
+  <main id="workspace">
+    <header id="top-bar">
+      <div class="title-wrap">
+        <h1 class="logo">Image Pro Batch Enhancer</h1>
+        <button id="helpBtn" title="User Manual" aria-label="User Manual">?</button>
+      </div>
+      <div id="zoom-controls">
+        <button id="zoomOutBtn" title="Zoom Out">−</button>
+        <span id="zoomReadout">100%</span>
+        <button id="zoomInBtn" title="Zoom In">+</button>
+        <button id="zoomResetBtn" title="Reset View">Reset</button>
+      </div>
+    </header>
+    
+    <section id="canvas-container" aria-label="Image Editor Canvas"><canvas id="editorCanvas"></canvas></section>
+    <section id="thumbnail-strip" aria-label="Batch Image Queue"></section>
+    <div id="notification" aria-live="polite">Ready</div>
+  </main>
+
+  <!-- RIGHT: TOOL SIDEBAR -->
+  <aside id="sidebar" aria-label="Enhancement Tools">
+    
+    <!-- STICKY IMPORT TOP SECTION -->
+    <div id="sticky-import">
+      <div class="card" style="padding: 12px;">
+        <div style="display: flex; gap: 8px;">
+          <button id="importBtn" class="btn import-btn" style="flex:1;" title="Drag & Drop Files Here">Choose File</button>
+          <button id="importFolderBtn" class="btn import-btn" style="flex:1;" title="Drag & Drop Folder Here">Choose Folder</button>
+        </div>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display:none;" aria-hidden="true">
+        <input type="file" id="folderInput" webkitdirectory directory multiple accept="image/*" style="display:none;" aria-hidden="true">
+      </div>
+    </div>
+
+    <div class="scrollable-content">
+
+      <!-- DATA CARD: TARGET -->
+      <div class="card">
+        <h3>Apply Target</h3>
+        <div style="display: flex; gap: 8px;">
+          <button id="modeIndividualBtn" class="btn active-btn" style="flex:1;">Active Image</button>
+          <button id="modeAllBtn" class="btn" style="flex:1;">All Images</button>
+        </div>
+      </div>
+
+      <!-- DATA CARD: WHITE BALANCE -->
+      <div class="card">
+        <h3>White Balance</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button id="awbBtn" class="btn blue-btn" style="flex: 1;">Auto Correct</button>
+          <button id="eyedropperBtn" class="btn" style="flex: 1;">Pick White</button>
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Intensity</span><span><span id="wbAmountVal">100</span>%</span></div>
+          <input type="range" id="wbAmountRange" min="0" max="100" value="100" aria-label="White Balance Intensity">
+        </div>
+        <button id="resetWbBtn" class="btn danger-btn" style="margin-top: 8px;">Reset White Balance</button>
+      </div>
+
+      <!-- DATA CARD: COLOR CHANNELS (Restored) -->
+      <div class="card">
+        <h3>Color Channels</h3>
+        <div class="control-group">
+          <div class="label-row"><span>Red</span><span><span id="redChanVal">0</span></span></div>
+          <input type="range" id="redChanRange" min="-100" max="100" value="0" aria-label="Red Channel Adjustment">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Green</span><span><span id="greenChanVal">0</span></span></div>
+          <input type="range" id="greenChanRange" min="-100" max="100" value="0" aria-label="Green Channel Adjustment">
+        </div>
+        <div class="control-group" style="margin-bottom: 0;">
+          <div class="label-row"><span>Blue</span><span><span id="blueChanVal">0</span></span></div>
+          <input type="range" id="blueChanRange" min="-100" max="100" value="0" aria-label="Blue Channel Adjustment">
+        </div>
+      </div>
+
+      <!-- DATA CARD: GEOMETRY -->
+      <div class="card">
+        <h3>Geometry</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button id="cropBtn" class="btn" style="flex: 2;">Perspective Crop</button>
+          <button id="clearCropBtn" class="btn danger-btn" style="flex: 1; display: none;">Clear</button>
+        </div>
+        <button id="deskewBtn" class="btn blue-btn">Auto Deskew</button>
+      </div>
+
+      <!-- DATA CARD: ADJUSTMENTS -->
+      <div class="card">
+        <h3>Adjustments</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button id="autoLightBtn" class="btn blue-btn" style="flex: 1;">Auto Levels</button>
+          <button id="autoSharpenBtn" class="btn blue-btn" style="flex: 1;">Auto Sharpen</button>
+        </div>
+        
+        <div class="control-group">
+          <div class="label-row"><span>Sharpen</span><span><span id="sharpenVal">0</span>%</span></div>
+          <input type="range" id="sharpen" min="0" max="100" value="0" aria-label="Sharpen Amount">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Skew</span><span><span id="deskewVal">0</span>°</span></div>
+          <input type="range" id="deskewRange" min="-25" max="25" step="0.1" value="0" aria-label="Manual Deskew Angle">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Brightness</span><span><span id="brightVal">100</span>%</span></div>
+          <input type="range" id="brightness" min="0" max="200" value="100" aria-label="Brightness Amount">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Contrast</span><span><span id="contrastVal">100</span>%</span></div>
+          <input type="range" id="contrast" min="0" max="200" value="100" aria-label="Contrast Amount">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Saturation</span><span><span id="satVal">100</span>%</span></div>
+          <input type="range" id="saturation" min="0" max="200" value="100" aria-label="Saturation Amount">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Exposure</span><span><span id="expVal">0</span></span></div>
+          <input type="range" id="exposure" min="-100" max="100" value="0" aria-label="Exposure Adjustment">
+        </div>
+        <div class="control-group">
+          <div class="label-row"><span>Temperature</span><span><span id="tempVal">0</span></span></div>
+          <input type="range" id="temp" min="-100" max="100" value="0" aria-label="Color Temperature">
+        </div>
+        <div class="control-group" style="margin-bottom: 0;">
+          <div class="label-row"><span>Tint</span><span><span id="tintVal">0</span></span></div>
+          <input type="range" id="tint" min="-100" max="100" value="0" aria-label="Color Tint">
+        </div>
+        
+        <button id="resetBtn" class="btn danger-btn" style="margin-top: 8px;">Reset Filters</button>
+      </div>
+
+      <!-- DATA CARD: MEMORY PRESET -->
+      <div class="card">
+        <h3>Memory Preset</h3>
+        <div style="display: flex; gap: 8px;">
+          <button id="loadPresetBtn" class="btn active-btn" style="flex:1;">Load Settings</button>
+          <button id="savePresetBtn" class="btn active-btn" style="flex:1; filter: brightness(0.9);">Save</button>
+        </div>
+      </div>
+
+      <!-- DATA CARD: EXPORT -->
+      <div class="card">
+        <h3>Export Settings</h3>
+        <div class="toggle-group">
+          <input type="radio" id="jpeg" name="format" value="image/jpeg">
+          <label for="jpeg">JPEG</label>
+          <input type="radio" id="webp" name="format" value="image/webp" checked>
+          <label for="webp">WEBP</label>
+          <input type="radio" id="png" name="format" value="image/png">
+          <label for="png">PNG</label>
+        </div>
+        <div class="control-group" id="qualityBox" style="margin-bottom: 0;">
+          <div class="label-row"><span>Quality</span><span><span id="qualityVal">70</span>%</span></div>
+          <input type="range" id="quality" min="10" max="100" value="70" aria-label="Export Quality">
+        </div>
+      </div>
+
+      <!-- DATA CARD: RESIZE -->
+      <div class="card" style="margin-bottom: 0;">
+        <h3>Resize Settings</h3>
+        <div class="resize-row" style="justify-content: flex-start; margin-bottom: 12px;">
+          <label class="check-label" style="width: 100%;">
+            <input type="checkbox" id="noResize"> Do Not Resize (Keep Original)
+          </label>
+        </div>
+        <div class="resize-row" id="widthRow">
+          <span>Width</span>
+          <div class="resize-input-group">
+            <input type="number" id="resizeWidth" value="1200" aria-label="Export Width">
+          </div>
+          <label class="check-label"><input type="checkbox" id="autoWidth"> Auto</label>
+        </div>
+        <div class="resize-row" id="heightRow" style="margin-bottom: 0;">
+          <span>Height</span>
+          <div class="resize-input-group">
+            <input type="number" id="resizeHeight" value="512" disabled aria-label="Export Height">
+          </div>
+          <label class="check-label"><input type="checkbox" id="autoHeight" checked> Auto</label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- EXPORT BATCH AREA -->
+    <div class="batch-strip">
+      <div class="batch-count" id="batchProgress">No images loaded</div>
+      <button id="downloadBtn" class="btn active-btn">Export Batch (ZIP)</button>
+    </div>
+  </aside>
+
+  <!-- MODAL FOR USER MANUAL -->
+  <div id="manualModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>User Manual</h2>
+        <button id="closeModalBtn" class="close-btn" aria-label="Close Manual">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>1. Getting Started</h3>
+        <ul>
+          <li><strong>Importing Files:</strong> Click or drag-and-drop into <em>Choose File</em> for single images, or <em>Choose Folder</em> to ingest an entire directory.</li>
+          <li><strong>Removing Images:</strong> Hover over any thumbnail in the bottom strip and click the <em>✕</em> icon to remove it.</li>
+          <li><strong>Apply Target:</strong> Selecting <em>All Images</em> instantly clones your slider settings, white balance, and crop coordinates across the entire batch queue.</li>
+        </ul>
+        
+        <h3>2. Memory Presets</h3>
+        <ul>
+          <li><strong>Save:</strong> Click to store your exact current slider adjustments and white balance math securely in your browser's local memory.</li>
+          <li><strong>Load Settings:</strong> Applies your saved preset instantly. Combined with "All Images", this is the fastest way to process a new batch of documents.</li>
+        </ul>
+        
+        <h3>3. White Balance (Color Neutralization)</h3>
+        <ul>
+          <li><strong>Pick White (Eyedropper):</strong> Click this tool, then click any area of the image that should be pure white. The engine averages a 5x5 pixel grid around your click to calculate the perfect offset.</li>
+          <li><strong>Auto Correct:</strong> Mathematically analyzes the image to automatically strip away blue or yellow color casts.</li>
+          <li><strong>Color Channels:</strong> If the eyedropper pushes a dark spot too far into the red spectrum, use the new Red/Green/Blue channel sliders to manually pull back the specific blowout.</li>
+        </ul>
+
+        <h3>4. Geometry (Deskew & Cropping)</h3>
+        <ul>
+          <li><strong>Perspective Crop:</strong> Drag the corner handles to match a skewed document. Click <em>Apply Crop</em> to warp the selection flat.</li>
+          <li><strong>Auto Deskew:</strong> Automatically straightens crooked scans up to ±12 degrees.</li>
+        </ul>
+
+        <h3>5. Enhancements & Adjustments</h3>
+        <ul>
+          <li><strong>Auto Levels:</strong> Instantly snaps brightness and contrast to optimal legibility levels.</li>
+          <li><strong>Auto Sharpen:</strong> Applies a 25% calculated matrix to enhance edge contrast for faded ink.</li>
+          <li><strong>Manual Sliders:</strong> Fine-tune Sharpen, Brightness, Contrast, Saturation, Exposure, Temperature, and Tint.</li>
+        </ul>
+
+        <h3>6. Exporting the Batch</h3>
+        <ul>
+          <li><strong>Format Selection:</strong> Choose between JPEG, WEBP, and PNG.</li>
+          <li><strong>Resize Settings:</strong> Check "Do Not Resize" to export raw files, or use the custom width/height tools.</li>
+          <li><strong>Export Batch:</strong> Compresses the processed queue into a single downloadable ZIP archive.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CACHE BUSTER SCRIPT TAG -->
+  <script src="app.js?v=9"></script>
+</body>
+</html>
